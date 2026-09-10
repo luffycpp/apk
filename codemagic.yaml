@@ -7,14 +7,13 @@ workflows:
       java: 17
 
     scripts:
-      # ── Step 1: Install only what Gradle needs ─────────────────────
+      # ── Step 1: Install only what Gradle needs (no CLI) ────────────
       - name: Install Capacitor Android dependency
         script: |
           cd $CM_BUILD_DIR/..
-          npm install --ignore-scripts --prefer-offline \
+          npm install --ignore-scripts \
             @capacitor/android \
-            @capacitor/core \
-            @capacitor/cli
+            @capacitor/core
 
       # ── Step 2: Build APK ──────────────────────────────────────────
       - name: Build Android APK
@@ -30,7 +29,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - your@email.com         # <-- Change to your email
+          - your@email.com
         notify:
           success: true
           failure: true
