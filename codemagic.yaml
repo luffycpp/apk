@@ -3,11 +3,23 @@ workflows:
     name: RapidFire Panel — Android APK
     max_build_duration: 30
     environment:
+      node: 20.17.0
       java: 17
 
     scripts:
+      # ── Step 1: Install only what Gradle needs ─────────────────────
+      - name: Install Capacitor Android dependency
+        script: |
+          cd $CM_BUILD_DIR/..
+          npm install --ignore-scripts --prefer-offline \
+            @capacitor/android \
+            @capacitor/core \
+            @capacitor/cli
+
+      # ── Step 2: Build APK ──────────────────────────────────────────
       - name: Build Android APK
         script: |
+          cd $CM_BUILD_DIR
           chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
 
