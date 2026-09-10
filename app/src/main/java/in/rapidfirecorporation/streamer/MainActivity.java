@@ -1,20 +1,15 @@
 package in.rapidfirecorporation.streamer;
 
 import android.app.AlertDialog;
-import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Vibrator;
 import android.view.View;
 import android.view.WindowManager;
-import android.webkit.DownloadListener;
 import android.webkit.WebView;
 import android.widget.Toast;
 
@@ -42,7 +37,9 @@ public class MainActivity extends BridgeActivity {
             android.os.Process.killProcess(android.os.Process.myPid());
         }
 
-        // ── Root detection ─────────────────────────────────────────
+        super.onCreate(savedInstanceState);
+
+        // ── Root detection (after super so dialog can show) ────────
         if (isDeviceRooted()) {
             new AlertDialog.Builder(this)
                 .setTitle("Access Denied")
@@ -52,8 +49,6 @@ public class MainActivity extends BridgeActivity {
                 .show();
             return;
         }
-
-        super.onCreate(savedInstanceState);
 
         // ── Screenshot / screen-record prevention ──────────────────
         getWindow().setFlags(
@@ -92,7 +87,7 @@ public class MainActivity extends BridgeActivity {
         );
 
         if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) {
-            // Device has no biometric — allow access directly
+            // No biometric set up — allow access directly
             authenticated = true;
             return;
         }
@@ -117,7 +112,7 @@ public class MainActivity extends BridgeActivity {
                 @Override
                 public void onAuthenticationError(int errorCode, CharSequence errString) {
                     super.onAuthenticationError(errorCode, errString);
-                    finishAffinity(); // Exit app if cancelled
+                    finishAffinity(); // Exit if cancelled
                 }
             });
 
@@ -158,41 +153,40 @@ public class MainActivity extends BridgeActivity {
         for (String path : rootPaths) {
             if (new File(path).exists()) return true;
         }
-        // Check for test-keys build
-        String buildTags = android.os.Build.TAGS;
+        String buildTags = Build.TAGS;
         if (buildTags != null && buildTags.contains("test-keys")) return true;
         return false;
     }
 
     // ── Network Check ──────────────────────────────────────────────
     private boolean isNetworkAvailable() {
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager cm = (ConnectivityManager)
+            getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm == null) return false;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            android.net.Network network = cm.getActiveNetwork();
-            if (network == null) return false;
-            NetworkCapabilities caps = cm.getNetworkCapabilities(network);
-            return caps != null && (
-                caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-            );
-        }
-        return true;
+        android.net.Network network = cm.getActiveNetwork();
+        if (network == null) return false;
+        NetworkCapabilities caps = cm.getNetworkCapabilities(network);
+        return caps != null && (
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+        );
     }
 
     // ── File Download Support ──────────────────────────────────────
     private void setupDownloadListener() {
-        getBridge().getWebView().setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
-            try {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse(url));
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intent);
-            } catch (Exception e) {
-                Toast.makeText(this, "Cannot open download link", Toast.LENGTH_SHORT).show();
-            }
-        });
+        getBridge().getWebView().setDownloadListener(
+            (url, userAgent, contentDisposition, mimeType, contentLength) -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setData(Uri.parse(url));
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(this, "Cannot open download link",
+                        Toast.LENGTH_SHORT).show();
+                }
+            });
     }
 
     // ── Hardware Back Button ───────────────────────────────────────
@@ -211,13 +205,13 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
-    // ── Resume: re-check debugger ──────────────────────────────────
+    // ── Resume: re-check debugger + restore fullscreen ─────────────
     @Override
     protected void onResume() {
         super.onResume();
         if (android.os.Debug.isDebuggerConnected()) {
             android.os.Process.killProcess(android.os.Process.myPid());
         }
-        enableFullScreen(); // Re-apply on resume
+        enableFullScreen();
     }
 }
