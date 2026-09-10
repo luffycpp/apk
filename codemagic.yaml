@@ -7,7 +7,6 @@ workflows:
       java: 21
 
     scripts:
-      # ── Step 1: Verify Java version ────────────────────────────────
       - name: Check Java version
         script: |
           java -version
@@ -19,7 +18,6 @@ workflows:
             echo "Found Java 21 at: $JAVA_HOME"
           fi
 
-      # ── Step 2: Install Capacitor deps ─────────────────────────────
       - name: Install Capacitor Android dependency
         script: |
           cd $CM_BUILD_DIR/..
@@ -27,7 +25,6 @@ workflows:
             @capacitor/android \
             @capacitor/core
 
-      # ── Step 3: Build APK ──────────────────────────────────────────
       - name: Build Android APK
         script: |
           # Set Java 21 explicitly
