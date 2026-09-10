@@ -4,10 +4,22 @@ workflows:
     max_build_duration: 30
     environment:
       node: 20.17.0
-      java: 17
+      java: 21
 
     scripts:
-      # ── Step 1: Install only what Gradle needs (no CLI) ────────────
+      # ── Step 1: Verify Java version ────────────────────────────────
+      - name: Check Java version
+        script: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+          # Find actual Java 21 path on Codemagic and export it
+          JAVA21=$(ls /Library/Java/JavaVirtualMachines/ | grep -i "21" | head -1)
+          if [ -n "$JAVA21" ]; then
+            export JAVA_HOME="/Library/Java/JavaVirtualMachines/$JAVA21/Contents/Home"
+            echo "Found Java 21 at: $JAVA_HOME"
+          fi
+
+      # ── Step 2: Install Capacitor deps ─────────────────────────────
       - name: Install Capacitor Android dependency
         script: |
           cd $CM_BUILD_DIR/..
@@ -15,10 +27,17 @@ workflows:
             @capacitor/android \
             @capacitor/core
 
-      # ── Step 2: Build APK ──────────────────────────────────────────
+      # ── Step 3: Build APK ──────────────────────────────────────────
       - name: Build Android APK
         script: |
-          cd $CM_BUILD_DIR
+          # Set Java 21 explicitly
+          JAVA21=$(ls /Library/Java/JavaVirtualMachines/ | grep -i "21" | head -1)
+          if [ -n "$JAVA21" ]; then
+            export JAVA_HOME="/Library/Java/JavaVirtualMachines/$JAVA21/Contents/Home"
+            # Update gradle.properties with actual path
+            sed -i '' "s|org.gradle.java.home=.*|org.gradle.java.home=$JAVA_HOME|" gradle.properties
+          fi
+          echo "Building with JAVA_HOME=$JAVA_HOME"
           chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
 
