@@ -99,7 +99,9 @@ public class MainActivity extends BridgeActivity {
                 public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
                     super.onAuthenticationSucceeded(result);
                     authenticated = true;
-                    getBridge().getWebView().setVisibility(View.VISIBLE);
+                    if (getBridge() != null && getBridge().getWebView() != null) {
+                        getBridge().getWebView().setVisibility(View.VISIBLE);
+                    }
                 }
 
                 @Override
@@ -126,7 +128,9 @@ public class MainActivity extends BridgeActivity {
             .build();
 
         // Hide WebView until authenticated
-        getBridge().getWebView().setVisibility(View.INVISIBLE);
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().setVisibility(View.INVISIBLE);
+        }
         biometricPrompt.authenticate(promptInfo);
     }
 
@@ -175,39 +179,43 @@ public class MainActivity extends BridgeActivity {
 
     // ── File Download Support ──────────────────────────────────────
     private void setupDownloadListener() {
-        getBridge().getWebView().setDownloadListener(
-            (url, userAgent, contentDisposition, mimeType, contentLength) -> {
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setData(Uri.parse(url));
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent);
-                } catch (Exception e) {
-                    Toast.makeText(this, "Cannot open download link",
-                        Toast.LENGTH_SHORT).show();
-                }
-            });
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().setDownloadListener(
+                (url, userAgent, contentDisposition, mimeType, contentLength) -> {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setData(Uri.parse(url));
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Cannot open download link",
+                            Toast.LENGTH_SHORT).show();
+                    }
+                });
+        }
     }
 
     // ── Hardware Back Button ───────────────────────────────────────
     @Override
     public void onBackPressed() {
-        WebView webView = getBridge().getWebView();
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            new AlertDialog.Builder(this)
-                .setTitle("Exit RapidFire")
-                .setMessage("Are you sure you want to exit?")
-                .setPositiveButton("Exit", (d, w) -> finishAffinity())
-                .setNegativeButton("Cancel", null)
-                .show();
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            WebView webView = getBridge().getWebView();
+            if (webView.canGoBack()) {
+                webView.goBack();
+                return;
+            }
         }
+        new AlertDialog.Builder(this)
+            .setTitle("Exit RapidFire")
+            .setMessage("Are you sure you want to exit?")
+            .setPositiveButton("Exit", (d, w) -> finishAffinity())
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     // ── Resume: re-check debugger + restore fullscreen ─────────────
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         if (android.os.Debug.isDebuggerConnected()) {
             android.os.Process.killProcess(android.os.Process.myPid());

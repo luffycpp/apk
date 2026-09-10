@@ -4,6 +4,7 @@
     <!-- ── Trust only system CAs for your domain ─────────────── -->
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">luffycpp.in</domain>
+        <domain includeSubdomains="true">rapidfirecorporation.in</domain>
         <domain includeSubdomains="true">keyauth.win</domain>
         <trust-anchors>
             <certificates src="system" />
